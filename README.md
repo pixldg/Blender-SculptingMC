@@ -25,7 +25,7 @@ Add basic primitives without leaving the sculpting mode
 ![Description of GIF](/media_examples/06.gif)
 
 ## Installation
-1. Download the release version.
+1. Download the released version.
 2. In Blender, go to `Edit > Preferences > Add-ons > Install from disk`.
 3. Select the ZIP file.
 4. Enable the add-on.
