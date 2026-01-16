@@ -1,17 +1,24 @@
 # Blender-SculptingMC
-Add basic primitives without leaving the sculpting mode
+Add basic primitives faster to sculpt mode
 
 ## Features
+- Start sculpting faster on your current mesh (One Click Button).
+![Description of GIF](/media_examples/00.gif)
+
 - Add meshes (plane, cube, sphere, quadsphere, cylinder, cone, torus)
-  ![Screenshot](media_examples/sculpt%20menu.png)
 ![Description of GIF](/media_examples/01.gif)
 
-- Add a 3D Bezier curve with bevel and caps
+- Start Sculpting with a 3D Curve.
 ![Description of GIF](/media_examples/02.gif)
   - Finish the curve and return to sculpt mode with one click.
+
+- Add a 3D Bezier curve with bevel and caps
+![Description of GIF](/media_examples/07.gif)
+  - Finish the curve and return to sculpt mode with one click.
  
-![Screenshot](media_examples/Finish%20curve%20menu.png)
-  
+- Clone the selected mesh.
+![Description of GIF](/media_examples/06.gif)
+
 - Add a Mirror modifier and apply it
 ![Description of GIF](/media_examples/03.gif)
 
@@ -21,8 +28,6 @@ Add basic primitives without leaving the sculpting mode
 - Join selected meshes without leaving sculpt mode.
 ![Description of GIF](/media_examples/05.gif)
 
-- All tools accessible from the top bar in Sculpt Mode.
-![Description of GIF](/media_examples/06.gif)
 
 ## Installation
 1. Download the released version.
