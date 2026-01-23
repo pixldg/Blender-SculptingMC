@@ -46,6 +46,7 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
             mod.render_levels = 2
             mod.subdivision_type = 'CATMULL_CLARK'
             bpy.ops.object.modifier_apply(modifier=mod.name)
+            obj.name = "Quadsphere"
         elif self.mesh_type == 'CUBE':
             bpy.ops.mesh.primitive_cube_add()
         elif self.mesh_type == 'CYLINDER':
