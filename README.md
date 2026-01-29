@@ -1,3 +1,5 @@
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0A01T8DIQ)
+
 # Blender-SculptingMC
 Add basic primitives faster to sculpt mode
 
