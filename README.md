@@ -15,20 +15,20 @@ Add basic primitives faster to sculpt mode
   - Finish the curve and return to sculpt mode with one click.
 
 - Add a 3D Bezier curve with bevel and caps
-![Description of GIF](/media_examples/07.gif)
+![Description of GIF](/media_examples/03.gif)
   - Finish the curve and return to sculpt mode with one click.
  
 - Clone the selected mesh.
-![Description of GIF](/media_examples/06.gif)
-
-- Add a Mirror modifier and apply it
-![Description of GIF](/media_examples/03.gif)
-
-- Add a Boolean modifier that hides the target object.
 ![Description of GIF](/media_examples/04.gif)
 
-- Join selected meshes without leaving sculpt mode.
+- Add a Mirror modifier and apply it
 ![Description of GIF](/media_examples/05.gif)
+
+- Add a Boolean modifier that hides the target object.
+![Description of GIF](/media_examples/06.gif)
+
+- Join selected meshes without leaving sculpt mode.
+![Description of GIF](/media_examples/07.gif)
 
 
 ## Installation
