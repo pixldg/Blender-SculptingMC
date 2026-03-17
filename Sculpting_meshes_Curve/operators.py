@@ -1,6 +1,5 @@
 import bpy
 
-
 # ============================================================
 # ADD MESH
 # ============================================================
@@ -21,6 +20,7 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
             ('CYLINDER', "Cylinder", ""),
             ('CONE', "Cone", ""),
             ('TORUS', "Torus", ""),
+            ('CAPSULE', "Capsule", ""),
         ],
         default='SPHERE'
     )
@@ -55,6 +55,19 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
             bpy.ops.mesh.primitive_cone_add()
         elif self.mesh_type == 'TORUS':
             bpy.ops.mesh.primitive_torus_add()
+        elif self.mesh_type == 'CAPSULE':
+            bpy.ops.mesh.primitive_cylinder_add(
+                radius=0.5,
+                depth=2.0,
+                location=(0, 0, 0)
+            )
+            obj = context.active_object
+            bevel = obj.modifiers.new(name="Bevel", type='BEVEL')
+            bevel.offset_type = 'OFFSET'
+            bevel.width = 0.4
+            bevel.segments = 4
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.modifier_apply(modifier=bevel.name)
 
         return {'FINISHED'}
 
@@ -66,7 +79,7 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
 class SCULPT_OT_clone_object(bpy.types.Operator):
     bl_idname = "sculpt.clone_object"
     bl_label = "Clone"
-    bl_description = "Duplicates the active mesh"
+    bl_description = "Duplicates the active mesh safely while sculpting"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -77,6 +90,7 @@ class SCULPT_OT_clone_object(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.duplicate()
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
         bpy.ops.object.mode_set(mode='SCULPT')
         return {'FINISHED'}
 
@@ -128,18 +142,9 @@ class SCULPT_OT_join_meshes(bpy.types.Operator):
 
 class SCULPT_OT_boolean_modifier(bpy.types.Operator):
     bl_idname = "sculpt.add_boolean_modifier"
-    bl_label = "Boolean"
-    bl_description = "Adds a boolean modifier and hides the target"
+    bl_label = "Boolean Difference"
+    bl_description = "Adds a boolean DIFFERENCE modifier and hides the cutter"
     bl_options = {'REGISTER', 'UNDO'}
-
-    operation: bpy.props.EnumProperty(
-        items=[
-            ('DIFFERENCE', "Difference", ""),
-            ('UNION', "Union", ""),
-            ('INTERSECT', "Intersect", ""),
-        ],
-        default='DIFFERENCE'
-    )
 
     @classmethod
     def poll(cls, context):
@@ -147,11 +152,12 @@ class SCULPT_OT_boolean_modifier(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
+
         active = context.active_object
         target = next(o for o in context.selected_objects if o != active)
 
         mod = active.modifiers.new("Boolean", 'BOOLEAN')
-        mod.operation = self.operation
+        mod.operation = 'DIFFERENCE'
         mod.object = target
 
         target.hide_set(True)
@@ -162,18 +168,46 @@ class SCULPT_OT_boolean_modifier(bpy.types.Operator):
 
 
 # ============================================================
+# MULTIRESOLUTION
+# ============================================================
+
+class SCULPT_OT_add_multires(bpy.types.Operator):
+    bl_idname = "sculpt.add_multires"
+    bl_label = "Add Multires (Sculpt Base Mesh)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj and obj.type == 'MESH'
+
+    def execute(self, context):
+        obj = context.active_object
+
+        if context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        mod = obj.modifiers.new(name="Multires", type='MULTIRES')
+        mod.use_sculpt_base_mesh = True
+
+        bpy.ops.object.mode_set(mode='SCULPT')
+
+        return {'FINISHED'}
+
+
+# ============================================================
 # MIRROR
 # ============================================================
 
 class SCULPT_OT_add_mirror(bpy.types.Operator):
     bl_idname = "sculpt.add_mirror"
     bl_label = "Mirror"
-    bl_description = "Adds a mirror modifier"
+    bl_description = "Adds a mirror"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'SCULPT' and context.active_object
+        return context.mode == 'SCULPT' and context.active_object is not None
 
     def execute(self, context):
         obj = context.active_object
@@ -198,6 +232,7 @@ class SCULPT_OT_apply_mirror(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
         mirror_mod = next(m for m in obj.modifiers if m.type == 'MIRROR')
+
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.modifier_apply(modifier=mirror_mod.name)
         bpy.ops.object.mode_set(mode='SCULPT')
@@ -231,7 +266,7 @@ class SCULPT_OT_add_curve(bpy.types.Operator):
 class SCULPT_OT_finish_curve(bpy.types.Operator):
     bl_idname = "sculpt.finish_curve"
     bl_label = "Sculpt on Curve"
-    bl_description = "Evaluates curve geometry and converts to mesh"
+    bl_description = "Evaluates curve geometry, converts to mesh, enters Sculpt Mode"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -242,10 +277,13 @@ class SCULPT_OT_finish_curve(bpy.types.Operator):
         obj = context.active_object
         curve = obj.data
 
-        if curve.bevel_depth == 0 and curve.extrude == 0:
+        bevel = curve.bevel_depth
+        extrude = curve.extrude
+
+        if bevel == 0 and extrude == 0:
             curve.bevel_depth = 0.04
             curve.use_fill_caps = True
-        elif curve.bevel_depth > 0:
+        elif bevel > 0:
             curve.use_fill_caps = True
 
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -264,6 +302,7 @@ classes = (
     SCULPT_OT_back_to_sculpt,
     SCULPT_OT_join_meshes,
     SCULPT_OT_boolean_modifier,
+    SCULPT_OT_add_multires,
     SCULPT_OT_add_mirror,
     SCULPT_OT_apply_mirror,
     SCULPT_OT_add_curve,
