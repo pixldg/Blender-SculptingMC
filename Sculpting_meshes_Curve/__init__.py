@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Sculpting Extra Meshes + Curve",
     "author": "Emir Bojorquez",
-    "version": (1, 3, 0),
+    "version": (1, 4, 0),
     "blender": (5, 0, 1),
     "location": "View3D Top Bar",
     "category": "Sculpt",
