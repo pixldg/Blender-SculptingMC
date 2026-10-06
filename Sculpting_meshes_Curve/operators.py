@@ -62,6 +62,7 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
                 location=(0, 0, 0)
             )
             obj = context.active_object
+            obj.name = "Capsule"
             bevel = obj.modifiers.new(name="Bevel", type='BEVEL')
             bevel.offset_type = 'OFFSET'
             bevel.width = 0.4
@@ -79,21 +80,91 @@ class SCULPT_OT_add_mesh_object(bpy.types.Operator):
 class SCULPT_OT_clone_object(bpy.types.Operator):
     bl_idname = "sculpt.clone_object"
     bl_label = "Clone"
-    bl_description = "Duplicates the active mesh safely while sculpting"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Duplicates the active mesh and mirrors it"
+    bl_options = {'UNDO'}
+
+    axis: bpy.props.EnumProperty(
+        name="Mirror Axis",
+        description="Axis on which to mirror the clone",
+        items=[
+            ('X', "X", "Mirror on X axis"),
+            ('Y', "Y", "Mirror on Y axis"),
+            ('Z', "Z", "Mirror on Z axis"),
+        ],
+        default='X'
+    )
 
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return context.mode == 'SCULPT' and obj and obj.type == 'MESH'
+        return (
+            context.mode == 'SCULPT'
+            and obj
+            and obj.type == 'MESH'
+        )
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.label(text="Mirror Axis")
+
+        row = layout.row(align=True)
+
+        row.prop(
+            self,
+            "axis",
+            expand=True
+        )
 
     def execute(self, context):
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.duplicate()
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-        bpy.ops.object.mode_set(mode='SCULPT')
-        return {'FINISHED'}
 
+        original = context.active_object
+        original_location = original.location.copy()
+
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        
+        bpy.ops.object.duplicate()
+
+        clone = context.active_object
+        
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+        
+        for vertex in clone.data.vertices:
+
+            if self.axis == 'X':
+                vertex.co.x *= -1
+
+            elif self.axis == 'Y':
+                vertex.co.y *= -1
+
+            elif self.axis == 'Z':
+                vertex.co.z *= -1
+
+        
+        clone.location = original_location.copy()
+
+        if self.axis == 'X':
+            clone.location.x = -original_location.x
+
+        elif self.axis == 'Y':
+            clone.location.y = -original_location.y
+
+        elif self.axis == 'Z':
+            clone.location.z = -original_location.z
+
+       
+        clone.scale = (1.0, 1.0, 1.0)
+
+        
+        bpy.ops.object.mode_set(mode='SCULPT')
+
+        return {'FINISHED'}
 
 # ============================================================
 # BACK TO SCULPT
@@ -262,7 +333,6 @@ class SCULPT_OT_add_curve(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
 
-
 class SCULPT_OT_finish_curve(bpy.types.Operator):
     bl_idname = "sculpt.finish_curve"
     bl_label = "Sculpt on Curve"
@@ -288,6 +358,8 @@ class SCULPT_OT_finish_curve(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.convert(target='MESH')
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+        bpy.ops.object.shade_flat()
         bpy.ops.object.mode_set(mode='SCULPT')
         return {'FINISHED'}
 
